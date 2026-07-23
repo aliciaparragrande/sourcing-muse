@@ -38,11 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-6xl px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm tracking-tight">MrQ</span>
-            </div>
             <div className="leading-tight">
-              <p className="text-[10px] font-medium tracking-wide text-muted-foreground">MrQ Talent</p>
+              <p className="text-[10px] font-medium tracking-wide text-muted-foreground">Talent Tools</p>
               <p className="text-sm font-semibold text-foreground">Sourcing Brief Builder</p>
             </div>
           </Link>
