@@ -8,11 +8,6 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) {
       throw redirect({ to: "/auth" });
     }
-    const domain = data.user.email?.split("@")[1]?.toLowerCase();
-    if (domain !== "mrq.com") {
-      await supabase.auth.signOut();
-      throw redirect({ to: "/auth", search: { denied: "1" } as never });
-    }
     return { user: data.user };
   },
   component: () => <Outlet />,
