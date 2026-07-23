@@ -12,8 +12,8 @@ export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Sign in — MrQ Sourcing Brief Builder" },
-      { name: "description", content: "MrQ Talent internal tool. Sign in with your @mrq.com Google account." },
+      { title: "Sign in — Sourcing Brief Builder" },
+      { name: "description", content: "Sign in to Sourcing Brief Builder." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -21,32 +21,23 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { denied } = Route.useSearch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(
-    denied ? "Access is restricted to @mrq.com Google Workspace accounts." : null,
-  );
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    // If already signed in with an @mrq.com account, bounce home.
     supabase.auth.getUser().then(({ data }) => {
       if (cancelled) return;
-      const domain = data.user?.email?.split("@")[1]?.toLowerCase();
-      if (data.user && domain === "mrq.com") {
+      if (data.user) {
         navigate({ to: "/" });
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        const domain = session.user.email?.split("@")[1]?.toLowerCase();
-        if (domain === "mrq.com") {
-          navigate({ to: "/" });
-        } else {
-          void supabase.auth.signOut();
-          setError("Access is restricted to @mrq.com Google Workspace accounts.");
-        }
+        navigate({ to: "/" });
       }
     });
     return () => {
@@ -61,7 +52,6 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + "/auth",
       extraParams: {
-        hd: "mrq.com",
         prompt: "select_account",
       },
     });
@@ -69,18 +59,28 @@ function AuthPage() {
       setError(result.error.message ?? "Sign-in failed. Try again.");
       setLoading(false);
     }
-    // if redirected, browser leaves the page
+  }
+
+  async function handleEmailSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) {
+      setError(signInError.message);
+    }
+    setLoading(false);
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg tracking-tight">MrQ</span>
-          </div>
           <div>
-            <p className="text-xs font-medium tracking-wide text-muted-foreground">MrQ Talent</p>
+            <p className="text-xs font-medium tracking-wide text-muted-foreground">Talent Tools</p>
             <h1 className="text-lg font-semibold text-foreground">Sourcing Brief Builder</h1>
           </div>
         </div>
@@ -88,7 +88,7 @@ function AuthPage() {
         <div className="rounded-xl bg-card border border-border p-8 shadow-sm">
           <h2 className="text-xl font-semibold text-foreground">Sign in</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Internal tool. Restricted to @mrq.com accounts.
+            Demo version — sign in to explore.
           </p>
 
           {error && (
@@ -97,18 +97,46 @@ function AuthPage() {
             </div>
           )}
 
+          <form onSubmit={handleEmailSignIn} className="mt-6 space-y-3">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+
+          <div className="my-4 flex items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="mt-6 w-full inline-flex items-center justify-center gap-3 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+            className="w-full inline-flex items-center justify-center gap-3 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
           >
             <GoogleMark />
             {loading ? "Opening Google…" : "Continue with Google"}
           </button>
-
-          <p className="mt-6 text-xs text-muted-foreground">
-            By continuing you agree to MrQ's acceptable-use policy for internal tools.
-          </p>
         </div>
       </div>
     </div>
